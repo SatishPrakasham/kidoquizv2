@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { networkInterfaces } from 'os';
+import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 
 // Function to get local IP address
 function getLocalIPAddress(): string {
@@ -12,6 +12,7 @@ function getLocalIPAddress(): string {
         const interfaces = nets[name];
         if (interfaces) {
             interfaces.forEach((net) => {
+                // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
                 if (net.family === 'IPv4' && !net.internal) {
                     addresses.push(net.address);
                 }
@@ -19,80 +20,54 @@ function getLocalIPAddress(): string {
         }
     });
 
+    // Return the first valid IP address or localhost if none found
     return addresses[0] || 'localhost';
 }
 
-// Temporary in-memory storage (will replace with database later)
-let activeQRs: { [userId: string]: { id: string; timestamp: number; isUsed: boolean; qrImageData: string } } = {};
+// Temporary in-memory storage (replace with your database)
+let currentQRCode: {
+    id: string;
+    timestamp: number;
+    isUsed: boolean;
+    qrImageData: string;
+} | null = null;
 
-// QR code expiration time (5 minutes)
-const EXPIRE_TIME = 5 * 60 * 1000; // 5 minutes
-
-// Generate a new QR code for a specific user
-async function generateNewQRCode(userId: string) {
-    // Check if a valid QR code already exists
-    if (activeQRs[userId] && !activeQRs[userId].isUsed) {
-        return activeQRs[userId]; // Return the existing QR code if still valid
-    }
-
-    // Create new QR data
+// Generate a new QR code
+async function generateNewQRCode() {
     const qrData = {
         id: uuidv4(),
         timestamp: Date.now(),
         isUsed: false,
     };
 
-    // Generate a QR code URL
+    // Create a URL that includes the QR data
     const urlParams = new URLSearchParams({
         id: qrData.id,
-        timestamp: qrData.timestamp.toString(),
+        timestamp: qrData.timestamp.toString()
     });
-
+    
+    // Use local IP address with port 3000
     const localIP = getLocalIPAddress();
     const qrUrl = `http://${localIP}:3000/scan/validate?${urlParams.toString()}`;
-    console.log('Generated QR URL:', qrUrl);
-
-    // Generate the QR code image
+    console.log('Generated QR URL:', qrUrl); // For debugging
     const qrImageData = await QRCode.toDataURL(qrUrl);
 
-    // Store the new QR code
-    activeQRs[userId] = { ...qrData, qrImageData };
-
-    return activeQRs[userId];
+    return { ...qrData, qrImageData };
 }
 
-// Cleanup function to remove expired QR codes
-setInterval(() => {
-    const currentTime = Date.now();
-    Object.keys(activeQRs).forEach((userId) => {
-        if (currentTime - activeQRs[userId].timestamp > EXPIRE_TIME) {
-            console.log(`QR Code for user ${userId} expired and removed.`);
-            delete activeQRs[userId];
-        }
-    });
-}, 60 * 1000); // Runs every 60 seconds
-
-// GET endpoint to retrieve or generate a QR code for a user
-export async function GET(request: Request) {
+// GET endpoint to retrieve current QR code
+export async function GET() {
     try {
-        const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
-
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, error: 'User ID is required' },
-                { status: 400 }
-            );
+        // If no QR code exists or current one is used, generate new one
+        if (!currentQRCode || currentQRCode.isUsed) {
+            currentQRCode = await generateNewQRCode();
         }
-
-        // Generate or retrieve the user's QR code
-        const qrData = await generateNewQRCode(userId);
 
         return NextResponse.json({
             success: true,
             data: {
-                qrImageData: qrData.qrImageData,
-                timestamp: qrData.timestamp,
+                qrImageData: currentQRCode.qrImageData,
+                timestamp: currentQRCode.timestamp,
             },
         });
     } catch (error) {
@@ -108,23 +83,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { id, userId } = body;
+        const { id, timestamp } = body;
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, error: 'User ID is required' },
-                { status: 400 }
-            );
-        }
-
-        if (!activeQRs[userId]) {
+        if (!currentQRCode) {
             return NextResponse.json(
                 { success: false, error: 'No active QR code found' },
                 { status: 404 }
             );
         }
-
-        const currentQRCode = activeQRs[userId];
 
         if (currentQRCode.id !== id) {
             return NextResponse.json(
@@ -133,27 +99,18 @@ export async function POST(request: Request) {
             );
         }
 
-        // Check if the QR code has expired
-        if (Date.now() - currentQRCode.timestamp > EXPIRE_TIME) {
-            delete activeQRs[userId]; // Remove expired QR code
-            return NextResponse.json(
-                { success: false, error: 'QR code expired. Please request a new one.' },
-                { status: 400 }
-            );
-        }
-
         if (currentQRCode.isUsed) {
             return NextResponse.json(
-                { success: false, error: 'This QR code has already been used' },
+                { success: false, error: 'This QR code has expired. Please visit campus for a new one.' },
                 { status: 400 }
             );
         }
 
-        // Mark the QR code as used
+        // Mark current QR as used
         currentQRCode.isUsed = true;
 
-        // Generate a new QR code for the next request
-        activeQRs[userId] = await generateNewQRCode(userId);
+        // Generate new QR code for next user
+        currentQRCode = await generateNewQRCode();
 
         return NextResponse.json({
             success: true,
