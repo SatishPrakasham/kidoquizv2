@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function ValidatePage() {
+function ValidatePageContent() {
     const searchParams = useSearchParams();
     const [status, setStatus] = useState<'validating' | 'success' | 'error'>('validating');
     const [message, setMessage] = useState('Validating QR code...');
@@ -18,17 +18,12 @@ export default function ValidatePage() {
                     throw new Error('Invalid QR code data');
                 }
 
-                console.log('Validating QR code:', { id, timestamp }); // Debug log
+                console.log('Validating QR code:', { id, timestamp });
 
                 const response = await fetch('/api/qr', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        id, 
-                        timestamp: parseInt(timestamp, 10)
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, timestamp: parseInt(timestamp, 10) }),
                 });
 
                 const data: { success?: boolean; error?: string } = await response.json();
@@ -42,7 +37,7 @@ export default function ValidatePage() {
                 } else {
                     throw new Error(data.error || 'Failed to validate QR code');
                 }
-            } catch (err: unknown) {  // ✅ FIXED: `unknown` instead of `any`
+            } catch (err) {
                 console.error('Validation error:', err);
 
                 if (err instanceof Error) {
@@ -63,7 +58,6 @@ export default function ValidatePage() {
             <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">QR Code Validation</h1>
-                    
                     <div className={`p-4 rounded-lg ${
                         status === 'validating' ? 'bg-blue-100 text-blue-700' :
                         status === 'success' ? 'bg-green-100 text-green-700' :
@@ -71,7 +65,6 @@ export default function ValidatePage() {
                     }`}>
                         <p>{message}</p>
                     </div>
-
                     {status === 'error' && (
                         <button
                             onClick={() => window.location.href = '/scan'}
@@ -83,5 +76,14 @@ export default function ValidatePage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// ✅ Wrap inside `<Suspense>` to fix the error
+export default function ValidatePage() {
+    return (
+        <Suspense fallback={<div>Loading QR Validation...</div>}>
+            <ValidatePageContent />
+        </Suspense>
     );
 }
