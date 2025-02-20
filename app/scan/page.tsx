@@ -16,9 +16,13 @@ export default function ScanPage() {
             /* verbose= */ false
         );
 
+        const handleScanError = (error: Error | string) => {
+            console.error(error);
+        };
+
         const handleScanSuccess = async (decodedText: string) => {
-            if (isProcessing) return; // Prevent multiple simultaneous scans
-            
+            if (isProcessing) return;
+
             setIsProcessing(true);
             scanner.pause(true);
 
@@ -30,7 +34,6 @@ export default function ScanPage() {
                     throw new Error('Invalid QR code format');
                 }
 
-                // Validate QR code with backend
                 const response = await fetch('/api/qr', {
                     method: 'POST',
                     headers: {
@@ -43,7 +46,6 @@ export default function ScanPage() {
 
                 if (data.success) {
                     setResult('QR code validated successfully! Redirecting to user page...');
-                    // Redirect to user page after successful scan
                     setTimeout(() => {
                         window.location.href = '/user';
                     }, 2000);
@@ -51,21 +53,22 @@ export default function ScanPage() {
                     setError(data.error || 'Invalid QR code');
                     scanner.resume();
                 }
-            } catch (err: any) {
-                setError(err.message || 'Failed to process QR code');
+            } catch (err: unknown) {
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError('An unknown error occurred');
+                }
                 scanner.resume();
             } finally {
                 setIsProcessing(false);
             }
         };
 
-        const handleScanError = (error: any) => {
-            console.error(error);
-        };
-
+        // Start QR scanner
         scanner.render(handleScanSuccess, handleScanError);
 
-        // Cleanup
+        // Cleanup function to remove scanner instance
         return () => {
             scanner.clear();
         };
@@ -76,7 +79,7 @@ export default function ScanPage() {
             <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">Scan QR Code</h1>
-                    
+
                     {error && (
                         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
                             <p>{error}</p>
@@ -90,7 +93,7 @@ export default function ScanPage() {
                     )}
 
                     <div id="qr-reader" className="mx-auto"></div>
-                    
+
                     <p className="text-sm text-gray-500 mt-4">
                         Position the QR code within the frame to scan
                     </p>

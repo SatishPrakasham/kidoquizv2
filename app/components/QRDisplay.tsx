@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 export default function QRDisplay() {
     const [qrCode, setQrCode] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export default function QRDisplay() {
                 setError(data.error || 'Failed to generate QR code');
             }
         } catch (err) {
-            setError('Failed to fetch QR code');
+        console.error('QR Code error:', err);
         } finally {
             setLoading(false);
         }
@@ -55,7 +56,7 @@ export default function QRDisplay() {
     return (
         <div className="mb-4">
             <div className="relative w-64 h-64 mx-auto border-2 border-gray-200 rounded-lg p-2 bg-white shadow-sm">
-                <img
+                <Image
                     src={qrCode}
                     alt="QR Code"
                     className="w-full h-full"

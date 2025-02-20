@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { networkInterfaces, NetworkInterfaceInfo } from 'os';
+import { networkInterfaces } from 'os';
 
 // Function to get local IP address
 function getLocalIPAddress(): string {
@@ -83,7 +83,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { id, timestamp } = body;
+        const { id } = body;
 
         if (!currentQRCode) {
             return NextResponse.json(
