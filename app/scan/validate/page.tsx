@@ -31,22 +31,27 @@ export default function ValidatePage() {
                     }),
                 });
 
-                const data = await response.json();
+                const data: { success?: boolean; error?: string } = await response.json();
 
                 if (data.success) {
                     setStatus('success');
                     setMessage('QR code validated successfully! Redirecting...');
-                    // Redirect to user page after successful validation
                     setTimeout(() => {
                         window.location.href = '/user';
                     }, 1500);
                 } else {
                     throw new Error(data.error || 'Failed to validate QR code');
                 }
-            } catch (err: any) {
-                console.error('Validation error:', err); // Debug log
+            } catch (err: unknown) {  // ✅ FIXED: `unknown` instead of `any`
+                console.error('Validation error:', err);
+
+                if (err instanceof Error) {
+                    setMessage(err.message);
+                } else {
+                    setMessage('Failed to validate QR code');
+                }
+
                 setStatus('error');
-                setMessage(err.message || 'Failed to validate QR code');
             }
         };
 
