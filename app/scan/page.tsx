@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
-export default function ScanPage() {
+export default function ScanValidatePage() {
     const [scanResult, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -16,10 +16,13 @@ export default function ScanPage() {
             /* verbose= */ false
         );
 
+        // Error handler with correct TypeScript types
         const handleScanError = (error: Error | string) => {
             console.error(error);
+            setError(typeof error === "string" ? error : error.message);
         };
 
+        // Success handler with fixed TypeScript types
         const handleScanSuccess = async (decodedText: string) => {
             if (isProcessing) return;
 
@@ -27,7 +30,7 @@ export default function ScanPage() {
             scanner.pause(true);
 
             try {
-                let qrData;
+                let qrData: Record<string, unknown>;
                 try {
                     qrData = JSON.parse(decodedText);
                 } catch {
@@ -42,7 +45,7 @@ export default function ScanPage() {
                     body: JSON.stringify(qrData),
                 });
 
-                const data = await response.json();
+                const data: { success?: boolean; error?: string } = await response.json();
 
                 if (data.success) {
                     setResult('QR code validated successfully! Redirecting to user page...');
@@ -68,7 +71,7 @@ export default function ScanPage() {
         // Start QR scanner
         scanner.render(handleScanSuccess, handleScanError);
 
-        // Cleanup function to remove scanner instance
+        // Cleanup function to remove scanner instance on unmount
         return () => {
             scanner.clear();
         };
@@ -78,7 +81,7 @@ export default function ScanPage() {
         <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Scan QR Code</h1>
+                    <h1 className="text-2xl font-bold mb-4">Validate QR Code</h1>
 
                     {error && (
                         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
@@ -95,7 +98,7 @@ export default function ScanPage() {
                     <div id="qr-reader" className="mx-auto"></div>
 
                     <p className="text-sm text-gray-500 mt-4">
-                        Position the QR code within the frame to scan
+                        Position the QR code within the frame to validate
                     </p>
                 </div>
             </div>
