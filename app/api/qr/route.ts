@@ -1,28 +1,9 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { networkInterfaces } from 'os';
 
-// Function to get local IP address
-function getLocalIPAddress(): string {
-    const nets = networkInterfaces();
-    const addresses: string[] = [];
-
-    Object.keys(nets).forEach((name) => {
-        const interfaces = nets[name];
-        if (interfaces) {
-            interfaces.forEach((net) => {
-                // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-                if (net.family === 'IPv4' && !net.internal) {
-                    addresses.push(net.address);
-                }
-            });
-        }
-    });
-
-    // Return the first valid IP address or localhost if none found
-    return addresses[0] || 'localhost';
-}
+// Define your production URL (Replace this with your actual Railway URL)
+const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
 // Temporary in-memory storage (replace with your database)
 let currentQRCode: {
@@ -40,15 +21,13 @@ async function generateNewQRCode() {
         isUsed: false,
     };
 
-    // Create a URL that includes the QR data
+    // Create a URL that includes the QR data (Pointing to your live Railway domain)
     const urlParams = new URLSearchParams({
         id: qrData.id,
         timestamp: qrData.timestamp.toString()
     });
-    
-    // Use local IP address with port 3000
-    const localIP = getLocalIPAddress();
-    const qrUrl = `http://${localIP}:3000/scan/validate?${urlParams.toString()}`;
+
+    const qrUrl = `${PRODUCTION_URL}/scan/validate?${urlParams.toString()}`;
     console.log('Generated QR URL:', qrUrl); // For debugging
     const qrImageData = await QRCode.toDataURL(qrUrl);
 
@@ -58,7 +37,7 @@ async function generateNewQRCode() {
 // GET endpoint to retrieve current QR code
 export async function GET() {
     try {
-        // If no QR code exists or current one is used, generate new one
+        // If no QR code exists or current one is used, generate a new one
         if (!currentQRCode || currentQRCode.isUsed) {
             currentQRCode = await generateNewQRCode();
         }
