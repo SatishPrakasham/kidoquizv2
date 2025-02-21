@@ -9,10 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.4.1",
     "@types/qrcode": "^1.5.5",
     "@types/uuid": "^10.0.0",
     "html5-qrcode": "^2.3.8",
     "next": "15.1.6",
+    "prisma": "^6.4.1",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
