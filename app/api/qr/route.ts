@@ -16,19 +16,19 @@ let currentQRCode: {
 // Generate a new QR code
 async function generateNewQRCode() {
     const qrData = {
-        id: uuidv4(),
+        id: uuidv4(),  // 🔹 Generate a unique QR Code ID
         timestamp: Date.now(),
         isUsed: false,
     };
 
-    // Create a URL that includes the QR data (Pointing to your live Railway domain)
+    // Create a URL that includes the QR data
     const urlParams = new URLSearchParams({
         id: qrData.id,
         timestamp: qrData.timestamp.toString()
     });
 
     const qrUrl = `${PRODUCTION_URL}/scan/validate?${urlParams.toString()}`;
-    console.log('Generated QR URL:', qrUrl); // For debugging
+    console.log('Generated QR URL:', qrUrl);  // Debugging
     const qrImageData = await QRCode.toDataURL(qrUrl);
 
     return { ...qrData, qrImageData };
@@ -37,7 +37,7 @@ async function generateNewQRCode() {
 // GET endpoint to retrieve current QR code
 export async function GET() {
     try {
-        // If no QR code exists or current one is used, generate a new one
+        // If no QR code exists or the current one is used, generate a new one
         if (!currentQRCode || currentQRCode.isUsed) {
             currentQRCode = await generateNewQRCode();
         }
@@ -45,6 +45,7 @@ export async function GET() {
         return NextResponse.json({
             success: true,
             data: {
+                id: currentQRCode.id,  // 🔹 Include the QR Code ID in the response
                 qrImageData: currentQRCode.qrImageData,
                 timestamp: currentQRCode.timestamp,
             },
@@ -94,6 +95,11 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             message: 'QR code validated successfully',
+            newQRCode: {
+                id: currentQRCode.id,
+                qrImageData: currentQRCode.qrImageData,
+                timestamp: currentQRCode.timestamp,
+            }
         });
     } catch (error) {
         console.error('Error validating QR code:', error);
