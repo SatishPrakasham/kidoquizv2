@@ -21,7 +21,7 @@ export default function QRDisplay() {
                 setError(data.error || 'Failed to generate QR code');
             }
         } catch (err) {
-        console.error('QR Code error:', err);
+            console.error('QR Code error:', err);
         } finally {
             setLoading(false);
         }
@@ -59,6 +59,8 @@ export default function QRDisplay() {
                 <Image
                     src={qrCode}
                     alt="QR Code"
+                    width={256}   // ✅ Fixed: Added width
+                    height={256}  // ✅ Fixed: Added height
                     className="w-full h-full"
                 />
             </div>
