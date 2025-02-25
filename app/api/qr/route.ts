@@ -25,15 +25,16 @@ async function generateNewQRCode() {
     console.log('Generated QR URL:', qrUrl);
     const qrImageData = await QRCode.toDataURL(qrUrl);
 
-    // Save to the database
-    await prisma.qrCode.create({
-        data: {
-            id: qrData.id,
-            timestamp: qrData.timestamp,
-            isUsed: false,
-            qrImageData: qrImageData,
-        },
-    });
+    // Save to the database using the correct Prisma model name
+await prisma.qRCode.create({
+    data: {
+        id: qrData.id,
+        timestamp: qrData.timestamp,
+        isUsed: false,
+        qrImageData: qrImageData, // ✅ Fix this field name
+    },
+});
+
 
     return { ...qrData, qrImageData };
 }
@@ -42,7 +43,7 @@ async function generateNewQRCode() {
 export async function GET() {
     try {
         // Fetch the latest unused QR code from the database
-        let qrCode = await prisma.qrCode.findFirst({
+        let qrCode = await prisma.qRCode.findFirst({
             where: { isUsed: false },
             orderBy: { timestamp: 'desc' }, // Get the most recent one
         });
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
         const { id } = body;
 
         // Find the QR code in the database
-        const qrCode = await prisma.qrCode.findUnique({
+        const qrCode = await prisma.qRCode.findUnique({
             where: { id },
         });
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
         }
 
         // Mark the QR code as used in the database
-        await prisma.qrCode.update({
+        await prisma.qRCode.update({
             where: { id },
             data: { isUsed: true },
         });
