@@ -1,18 +1,15 @@
-// Define database connection
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Generate Prisma Client
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Define a QR Code model
 model QRCode {
-  id        String  @id @default(uuid())
-  qrImage   String
-  timestamp BigInt
-  isUsed    Boolean @default(false)
+  id          String  @id @default(uuid())
+  timestamp   BigInt
+  isUsed      Boolean @default(false)
+  qrImageData String  
 }

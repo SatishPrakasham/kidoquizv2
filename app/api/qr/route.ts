@@ -1,59 +1,69 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
+import { PrismaClient } from '@prisma/client';
 
-// Define your production URL (Replace this with your actual Railway URL)
+const prisma = new PrismaClient();
+
+// Define your production URL (Replace with your Railway URL)
 const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
-// Temporary in-memory storage (replace with your database)
-let currentQRCode: {
-    id: string;
-    timestamp: number;
-    isUsed: boolean;
-    qrImageData: string;
-} | null = null;
-
-// Generate a new QR code
+// Generate a new QR code and store it in the database
 async function generateNewQRCode() {
     const qrData = {
-        id: uuidv4(),  // 🔹 Generate a unique QR Code ID
+        id: uuidv4(),
         timestamp: Date.now(),
         isUsed: false,
     };
 
-    // Create a URL that includes the QR data
     const urlParams = new URLSearchParams({
         id: qrData.id,
-        timestamp: qrData.timestamp.toString()
+        timestamp: qrData.timestamp.toString(),
     });
 
     const qrUrl = `${PRODUCTION_URL}/scan/validate?${urlParams.toString()}`;
-    console.log('Generated QR URL:', qrUrl);  // Debugging
+    console.log('Generated QR URL:', qrUrl);
     const qrImageData = await QRCode.toDataURL(qrUrl);
+
+    // Save to the database
+    await prisma.qrCode.create({
+        data: {
+            id: qrData.id,
+            timestamp: qrData.timestamp,
+            isUsed: false,
+            qrImageData: qrImageData,
+        },
+    });
 
     return { ...qrData, qrImageData };
 }
 
-// GET endpoint to retrieve current QR code
+// GET endpoint to retrieve the latest QR code
 export async function GET() {
     try {
-        // If no QR code exists or the current one is used, generate a new one
-        if (!currentQRCode || currentQRCode.isUsed) {
-            currentQRCode = await generateNewQRCode();
+        // Fetch the latest unused QR code from the database
+        let qrCode = await prisma.qrCode.findFirst({
+            where: { isUsed: false },
+            orderBy: { timestamp: 'desc' }, // Get the most recent one
+        });
+
+        // If no valid QR code exists, generate a new one
+        if (!qrCode) {
+            qrCode = await generateNewQRCode();
         }
 
         return NextResponse.json({
             success: true,
             data: {
-                id: currentQRCode.id,  // 🔹 Include the QR Code ID in the response
-                qrImageData: currentQRCode.qrImageData,
-                timestamp: currentQRCode.timestamp,
+                id: qrCode.id,
+                qrImageData: qrCode.qrImageData,
+                timestamp: qrCode.timestamp,
             },
         });
     } catch (error) {
-        console.error('Error generating QR code:', error);
+        console.error('Error fetching QR code:', error);
         return NextResponse.json(
-            { success: false, error: 'Failed to generate QR code' },
+            { success: false, error: 'Failed to fetch QR code' },
             { status: 500 }
         );
     }
@@ -65,41 +75,42 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { id } = body;
 
-        if (!currentQRCode) {
-            return NextResponse.json(
-                { success: false, error: 'No active QR code found' },
-                { status: 404 }
-            );
-        }
+        // Find the QR code in the database
+        const qrCode = await prisma.qrCode.findUnique({
+            where: { id },
+        });
 
-        if (currentQRCode.id !== id) {
+        if (!qrCode) {
             return NextResponse.json(
                 { success: false, error: 'Invalid QR code' },
                 { status: 400 }
             );
         }
 
-        if (currentQRCode.isUsed) {
+        if (qrCode.isUsed) {
             return NextResponse.json(
-                { success: false, error: 'This QR code has expired. Please visit campus for a new one.' },
+                { success: false, error: 'This QR code has expired. Please request a new one.' },
                 { status: 400 }
             );
         }
 
-        // Mark current QR as used
-        currentQRCode.isUsed = true;
+        // Mark the QR code as used in the database
+        await prisma.qrCode.update({
+            where: { id },
+            data: { isUsed: true },
+        });
 
-        // Generate new QR code for next user
-        currentQRCode = await generateNewQRCode();
+        // Generate a new QR code for the next user
+        const newQRCode = await generateNewQRCode();
 
         return NextResponse.json({
             success: true,
             message: 'QR code validated successfully',
             newQRCode: {
-                id: currentQRCode.id,
-                qrImageData: currentQRCode.qrImageData,
-                timestamp: currentQRCode.timestamp,
-            }
+                id: newQRCode.id,
+                qrImageData: newQRCode.qrImageData,
+                timestamp: newQRCode.timestamp,
+            },
         });
     } catch (error) {
         console.error('Error validating QR code:', error);
