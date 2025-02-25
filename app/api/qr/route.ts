@@ -49,7 +49,7 @@ export async function GET() {
 
         // If no valid QR code exists, generate a new one
         if (!qrCode) {
-            qrCode = await generateNewQRCode();
+            qrCode = await generateNewQRCode(); //hiii
         }
 
         return NextResponse.json({
