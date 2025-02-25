@@ -12,7 +12,7 @@ const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 async function generateNewQRCode() {
     const qrData = {
         id: uuidv4(),
-        timestamp: Date.now(),
+        timestamp: BigInt(Date.now()), // Ensure timestamp is stored as BigInt
         isUsed: false,
     };
 
@@ -25,16 +25,15 @@ async function generateNewQRCode() {
     console.log('Generated QR URL:', qrUrl);
     const qrImageData = await QRCode.toDataURL(qrUrl);
 
-    // Save to the database using the correct Prisma model name
-await prisma.qRCode.create({
-    data: {
-        id: qrData.id,
-        timestamp: qrData.timestamp,
-        isUsed: false,
-        qrImageData: qrImageData, // ✅ Fix this field name
-    },
-});
-
+    // Save to the database
+    await prisma.qRCode.create({
+        data: {
+            id: qrData.id,
+            timestamp: qrData.timestamp, // Store as BigInt
+            isUsed: false,
+            qrImageData: qrImageData,
+        },
+    });
 
     return { ...qrData, qrImageData };
 }
@@ -58,7 +57,7 @@ export async function GET() {
             data: {
                 id: qrCode.id,
                 qrImageData: qrCode.qrImageData,
-                timestamp: qrCode.timestamp,
+                timestamp: Number(qrCode.timestamp), // Convert BigInt to Number for response
             },
         });
     } catch (error) {
@@ -110,7 +109,7 @@ export async function POST(request: Request) {
             newQRCode: {
                 id: newQRCode.id,
                 qrImageData: newQRCode.qrImageData,
-                timestamp: newQRCode.timestamp,
+                timestamp: Number(newQRCode.timestamp), // Convert BigInt to Number
             },
         });
     } catch (error) {

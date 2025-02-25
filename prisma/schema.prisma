@@ -11,5 +11,6 @@ model QRCode {
   id          String  @id @default(uuid())
   timestamp   BigInt
   isUsed      Boolean @default(false)
-  qrImageData String  
+  qrImageData String
 }
+
