@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 // Define your production URL (Replace with your Railway URL)
 const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
-// Generate a new QR code and store it in the database
+// Temporary in-memory storage for QR code
+let currentQRCode: {
+    id: string;
+    timestamp: number;
+    isUsed: boolean;
+    qrImageData: string;
+} | null = null;
+
+// Function to generate a new QR code
 async function generateNewQRCode() {
     const qrData = {
         id: uuidv4(),
-        timestamp: BigInt(Date.now()), // Ensure timestamp is stored as BigInt
+        timestamp: Date.now(),
         isUsed: false,
     };
 
@@ -23,45 +28,30 @@ async function generateNewQRCode() {
 
     const qrUrl = `${PRODUCTION_URL}/scan/validate?${urlParams.toString()}`;
     console.log('Generated QR URL:', qrUrl);
+
     const qrImageData = await QRCode.toDataURL(qrUrl);
-
-    // Save to the database
-    await prisma.qRCode.create({
-        data: {
-            id: qrData.id,
-            timestamp: qrData.timestamp, // Store as BigInt
-            isUsed: false,
-            qrImageData: qrImageData,
-        },
-    });
-
-    return { ...qrData, qrImageData };
+    currentQRCode = { ...qrData, qrImageData }; // Save in memory
+    return currentQRCode;
 }
 
 // GET endpoint to retrieve the latest QR code
 export async function GET() {
     try {
-        // Fetch the latest unused QR code from the database
-        let qrCode = await prisma.qRCode.findFirst({
-            where: { isUsed: false },
-            orderBy: { timestamp: 'desc' }, // Get the most recent one
-        });
-
-        // If no valid QR code exists, generate a new one
-        if (!qrCode) {
-            qrCode = await generateNewQRCode(); //hiii
+        if (!currentQRCode || currentQRCode.isUsed) {
+            console.log('⚠️ No valid QR found. Generating a new one...');
+            currentQRCode = await generateNewQRCode();
         }
 
         return NextResponse.json({
             success: true,
             data: {
-                id: qrCode.id,
-                qrImageData: qrCode.qrImageData,
-                timestamp: Number(qrCode.timestamp), // Convert BigInt to Number for response
+                id: currentQRCode.id,
+                qrImageData: currentQRCode.qrImageData,
+                timestamp: currentQRCode.timestamp,
             },
         });
     } catch (error) {
-        console.error('Error fetching QR code:', error);
+        console.error('🚨 Error fetching QR code:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to fetch QR code' },
             { status: 500 }
@@ -75,30 +65,29 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { id } = body;
 
-        // Find the QR code in the database
-        const qrCode = await prisma.qRCode.findUnique({
-            where: { id },
-        });
+        if (!currentQRCode) {
+            return NextResponse.json(
+                { success: false, error: 'No active QR code found' },
+                { status: 404 }
+            );
+        }
 
-        if (!qrCode) {
+        if (currentQRCode.id !== id) {
             return NextResponse.json(
                 { success: false, error: 'Invalid QR code' },
                 { status: 400 }
             );
         }
 
-        if (qrCode.isUsed) {
+        if (currentQRCode.isUsed) {
             return NextResponse.json(
                 { success: false, error: 'This QR code has expired. Please request a new one.' },
                 { status: 400 }
             );
         }
 
-        // Mark the QR code as used in the database
-        await prisma.qRCode.update({
-            where: { id },
-            data: { isUsed: true },
-        });
+        // Mark the QR code as used
+        currentQRCode.isUsed = true;
 
         // Generate a new QR code for the next user
         const newQRCode = await generateNewQRCode();
@@ -109,11 +98,11 @@ export async function POST(request: Request) {
             newQRCode: {
                 id: newQRCode.id,
                 qrImageData: newQRCode.qrImageData,
-                timestamp: Number(newQRCode.timestamp), // Convert BigInt to Number
+                timestamp: newQRCode.timestamp,
             },
         });
     } catch (error) {
-        console.error('Error validating QR code:', error);
+        console.error('🚨 Error validating QR code:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to process QR code' },
             { status: 500 }
