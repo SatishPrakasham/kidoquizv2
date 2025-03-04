@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
   :root {
     --background: 0 0% 100%;
     --foreground: 224 71.4% 4.1%;
@@ -49,7 +46,7 @@
     --input: 215 27.9% 16.9%;
     --ring: 246 100% 60%;
   }
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
