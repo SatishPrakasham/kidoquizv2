@@ -78,7 +78,7 @@ export default function UserPage() {
               <motion.div className="space-y-4 pt-4" variants={childVariants}>
                 <Link href="/user/new" passHref>
                   <motion.button
-                    className="w-full group relative flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 rounded-xl font-medium shadow-md m-5"
+                    className="w-full group relative flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 rounded-xl font-medium shadow-md mb-5"
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
