@@ -83,7 +83,7 @@ export default function UserPage() {
                     whileHover="hover"
                     whileTap="tap"
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center py-5">
                       <UserPlus className="h-5 w-5 mr-3" />
                       <span>I am a New User</span>
                     </div>
