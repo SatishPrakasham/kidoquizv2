@@ -70,7 +70,7 @@ export default function UserPage() {
             <motion.div className="text-center space-y-6" variants={staggerChildren}>
               <motion.div variants={childVariants}>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  Welcome!
+                  Welcome to KidoQuiz!
                 </h1>
                 <p className="mt-2 text-gray-600">Please select an option to continue</p>
               </motion.div>
@@ -119,16 +119,6 @@ export default function UserPage() {
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
                   </motion.button>
                 </Link>
-              </motion.div>
-
-              <motion.div
-                className="pt-4 text-sm text-gray-500"
-                variants={childVariants}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1, duration: 0.5 }}
-              >
-                <p>Choose the option that best describes you</p>
               </motion.div>
             </motion.div>
           </div>
