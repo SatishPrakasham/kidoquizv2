@@ -17,16 +17,14 @@ const options = {
     }
 };
 
-// Properly declare the global variable to avoid TypeScript errors
+// Define the global type for MongoDB client
 declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-// Create a MongoDB client
 const client = new MongoClient(uri, options);
 const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? client.connect();
 
-// Assign the promise to global scope to prevent multiple connections in dev mode
 if (process.env.NODE_ENV !== "production") {
     global._mongoClientPromise = clientPromise;
 }
