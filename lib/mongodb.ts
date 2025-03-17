@@ -17,21 +17,16 @@ const options = {
     }
 };
 
-// Use `let` instead of `var` to fix ESLint `no-var` error
+// Properly declare the global variable to avoid TypeScript errors
 declare global {
-    // Ensure global type safety
-    // Avoid using `var` (deprecated) and enforce type safety
-    // Prevents TypeScript "has no index signature" error
-    // Ensures the global variable exists only in the NodeJS global scope
-    // Avoids race conditions in development
     var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-// Fix: Use `const` since `clientPromise` is never reassigned
+// Create a MongoDB client
 const client = new MongoClient(uri, options);
-const clientPromise: Promise<MongoClient> = global._mongoClientPromise || client.connect();
+const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? client.connect();
 
-// Ensure `global` variable is assigned in development mode only (prevents memory leaks)
+// Assign the promise to global scope to prevent multiple connections in dev mode
 if (process.env.NODE_ENV !== "production") {
     global._mongoClientPromise = clientPromise;
 }
