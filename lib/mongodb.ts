@@ -19,11 +19,18 @@ const options = {
 
 // Define the global type for MongoDB client
 declare global {
+    // eslint-disable-next-line no-var
     var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-const client = new MongoClient(uri, options);
-const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? client.connect();
+let clientPromise: Promise<MongoClient>;
+
+if (!global._mongoClientPromise) {
+    const client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
+}
+
+clientPromise = global._mongoClientPromise;
 
 if (process.env.NODE_ENV !== "production") {
     global._mongoClientPromise = clientPromise;
