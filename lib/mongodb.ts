@@ -1,7 +1,13 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import dotenv from 'dotenv';
+import tls from 'tls';
 
 dotenv.config(); // Load environment variables
+
+// Configure Node.js TLS settings
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Warning: Only for debugging
+tls.DEFAULT_MIN_VERSION = 'TLSv1.2';
+tls.DEFAULT_MAX_VERSION = 'TLSv1.3';
 
 const uri = process.env.MONGODB_URI as string;
 
@@ -14,7 +20,14 @@ const options = {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
+    ssl: true,
+    tls: true,
+    tlsCAFile: undefined, // Let Node.js use its own CA store
+    tlsAllowInvalidHostnames: true, // For debugging
+    tlsAllowInvalidCertificates: true, // For debugging
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000
 };
 
 // Define the global type for MongoDB client
@@ -40,8 +53,11 @@ async function connectToMongoDB(): Promise<MongoClient> {
         
         console.log("✅ MongoDB connection test successful!");
         return client;
-    } catch (error) {
-        console.error("🚨 Initial MongoDB connection test failed:", error);
+    } catch (error: any) {
+        console.error("🚨 Initial MongoDB connection test failed");
+        if (error.code) console.error("Error code:", error.code);
+        if (error.cause) console.error("Error cause:", error.cause);
+        if (error.message) console.error("Error message:", error.message);
         throw error;
     }
 }
