@@ -1,33 +1,22 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import dotenv from 'dotenv';
-import tls from 'tls';
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
-// Configure Node.js TLS settings
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Warning: Only for debugging
-tls.DEFAULT_MIN_VERSION = 'TLSv1.2';
-tls.DEFAULT_MAX_VERSION = 'TLSv1.3';
-
-const uri = process.env.MONGODB_URI as string;
-
-if (!uri) {
+if (!process.env.MONGODB_URI) {
     throw new Error("🚨 MONGODB_URI is not defined in .env file!");
 }
+
+// Remove any query parameters from the URI and add our own
+const baseUri = process.env.MONGODB_URI.split('?')[0];
+const uri = `${baseUri}?retryWrites=true&w=majority&tls=true&authSource=admin`;
 
 const options = {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    },
-    ssl: true,
-    tls: true,
-    tlsCAFile: undefined, // Let Node.js use its own CA store
-    tlsAllowInvalidHostnames: true, // For debugging
-    tlsAllowInvalidCertificates: true, // For debugging
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000
+    }
 };
 
 // Define the global type for MongoDB client
@@ -44,7 +33,7 @@ async function connectToMongoDB(): Promise<MongoClient> {
     try {
         console.log("🔄 Attempting to connect to MongoDB...");
         // Log URI without credentials for debugging
-        const maskedUri = uri.replace(/\/\/(.*):(.*)@/, '//****:****@');
+        const maskedUri = uri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@');
         console.log("Using URI:", maskedUri);
         
         const client = new MongoClient(uri, options);
