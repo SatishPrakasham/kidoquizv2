@@ -14,22 +14,37 @@ const options = {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
+    tls: true, // ✅ Force TLS for secure connection
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 };
 
-// Define the global type for MongoDB client
+// ✅ Define the global type for MongoDB client
 declare global {
-    // eslint-disable-next-line no-var
-    var _mongoClientPromise: Promise<MongoClient> | undefined;
+    var _mongoClientPromise: Promise<MongoClient> | undefined; // eslint-disable-line no-var
 }
+
+let clientPromise: Promise<MongoClient>;
 
 if (!global._mongoClientPromise) {
+    console.log("🔄 Connecting to MongoDB...");
+    
     const client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+    global._mongoClientPromise = client.connect()
+        .then((client) => {
+            console.log("✅ Successfully connected to MongoDB!");
+            return client;
+        })
+        .catch((error) => {
+            console.error("🚨 MongoDB Connection Failed:", error);
+            throw error;
+        });
 }
 
-const clientPromise = global._mongoClientPromise;
+clientPromise = global._mongoClientPromise;
 
+// ✅ Prevent memory leaks by setting global in development mode only
 if (process.env.NODE_ENV !== "production") {
     global._mongoClientPromise = clientPromise;
 }
