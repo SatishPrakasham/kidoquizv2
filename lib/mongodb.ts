@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion, MongoError } from 'mongodb';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 import dotenv from 'dotenv';
 import tls from 'tls';
 
