@@ -14,15 +14,7 @@ const options = {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    },
-    ssl: true,
-    tls: true,
-    tlsInsecure: false,
-    tlsAllowInvalidCertificates: false,
-    tlsAllowInvalidHostnames: false,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    retryWrites: true
+    }
 };
 
 // Define the global type for MongoDB client
