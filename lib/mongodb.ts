@@ -15,17 +15,22 @@ const options = {
         strict: true,
         deprecationErrors: true,
     },
-    tls: true, // ✅ Force TLS for secure connection
+    ssl: true,
+    tls: true,
+    tlsInsecure: false,
+    tlsAllowInvalidCertificates: false,
+    tlsAllowInvalidHostnames: false,
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    retryWrites: true
 };
 
-// ✅ Define the global type for MongoDB client
+// Define the global type for MongoDB client
 declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined; // eslint-disable-line no-var
 }
 
-// ✅ Fix ESLint issue: Use `const` instead of `let`
+// Create MongoDB client with connection handling
 const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? new MongoClient(uri, options).connect();
 
 if (!global._mongoClientPromise) {
@@ -40,7 +45,7 @@ if (!global._mongoClientPromise) {
     });
 }
 
-// ✅ Prevent memory leaks by setting global in development mode only
+// Prevent memory leaks by setting global in development mode only
 if (process.env.NODE_ENV !== "production") {
     global._mongoClientPromise = clientPromise;
 }
