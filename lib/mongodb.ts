@@ -25,24 +25,20 @@ declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined; // eslint-disable-line no-var
 }
 
-let clientPromise: Promise<MongoClient>;
+// ✅ Fix ESLint issue: Use `const` instead of `let`
+const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? new MongoClient(uri, options).connect();
 
 if (!global._mongoClientPromise) {
     console.log("🔄 Connecting to MongoDB...");
     
-    const client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect()
-        .then((client) => {
-            console.log("✅ Successfully connected to MongoDB!");
-            return client;
-        })
-        .catch((error) => {
-            console.error("🚨 MongoDB Connection Failed:", error);
-            throw error;
-        });
+    global._mongoClientPromise = clientPromise.then((client) => {
+        console.log("✅ Successfully connected to MongoDB!");
+        return client;
+    }).catch((error) => {
+        console.error("🚨 MongoDB Connection Failed:", error);
+        throw error;
+    });
 }
-
-clientPromise = global._mongoClientPromise;
 
 // ✅ Prevent memory leaks by setting global in development mode only
 if (process.env.NODE_ENV !== "production") {
