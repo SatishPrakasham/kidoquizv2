@@ -27,8 +27,7 @@ const options = {
     connectTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     retryWrites: true,
-    retryReads: true,
-    directConnection: true
+    retryReads: true
 };
 
 // Define the global type for MongoDB client
