@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion, MongoError } from 'mongodb';
 import dotenv from 'dotenv';
 import tls from 'tls';
 
@@ -35,6 +35,11 @@ declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined; // eslint-disable-line no-var
 }
 
+interface MongoDBError extends Error {
+    code?: string | number;
+    cause?: Error;
+}
+
 async function connectToMongoDB(): Promise<MongoClient> {
     try {
         console.log("🔄 Attempting to connect to MongoDB...");
@@ -53,11 +58,12 @@ async function connectToMongoDB(): Promise<MongoClient> {
         
         console.log("✅ MongoDB connection test successful!");
         return client;
-    } catch (error: any) {
+    } catch (error) {
         console.error("🚨 Initial MongoDB connection test failed");
-        if (error.code) console.error("Error code:", error.code);
-        if (error.cause) console.error("Error cause:", error.cause);
-        if (error.message) console.error("Error message:", error.message);
+        const mongoError = error as MongoDBError;
+        if (mongoError.code) console.error("Error code:", mongoError.code);
+        if (mongoError.cause) console.error("Error cause:", mongoError.cause);
+        if (mongoError.message) console.error("Error message:", mongoError.message);
         throw error;
     }
 }
@@ -70,7 +76,7 @@ if (!global._mongoClientPromise) {
             console.log("✅ Successfully connected to MongoDB!");
             return client;
         })
-        .catch((error) => {
+        .catch((error: MongoDBError) => {
             console.error("🚨 MongoDB Connection Failed:", error);
             throw error;
         });
