@@ -9,6 +9,9 @@ if (!uri) {
     throw new Error("🚨 MONGODB_URI is not defined in .env file!");
 }
 
+// Remove any existing TLS parameters from the URI
+const cleanUri = uri.replace(/[?&](tls|ssl|tlsAllowInvalidCertificates|tlsAllowInvalidHostnames)=[^&]+/g, '');
+
 const options = {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -17,12 +20,15 @@ const options = {
     },
     ssl: true,
     tls: true,
-    tlsAllowInvalidCertificates: true, // For debugging TLS issues
-    tlsAllowInvalidHostnames: true,    // For debugging TLS issues
+    tlsAllowInvalidCertificates: true,
+    tlsAllowInvalidHostnames: true,
     minPoolSize: 1,
     maxPoolSize: 10,
     connectTimeoutMS: 30000,
-    socketTimeoutMS: 45000
+    socketTimeoutMS: 45000,
+    retryWrites: true,
+    retryReads: true,
+    directConnection: true
 };
 
 // Define the global type for MongoDB client
@@ -32,14 +38,19 @@ declare global {
 
 async function connectToMongoDB(): Promise<MongoClient> {
     try {
-        const client = new MongoClient(uri, options);
         console.log("🔄 Attempting to connect to MongoDB...");
+        console.log("Using URI:", cleanUri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')); // Log URI without credentials
+        
+        const client = new MongoClient(cleanUri, options);
         
         // Connect and test the connection
         await client.connect();
-        await client.db("admin").command({ ping: 1 });
-        console.log("✅ MongoDB connection test successful!");
         
+        // Test the connection with a simple command
+        const db = client.db("admin");
+        await db.command({ ping: 1 });
+        
+        console.log("✅ MongoDB connection test successful!");
         return client;
     } catch (error) {
         console.error("🚨 Initial MongoDB connection test failed:", error);
