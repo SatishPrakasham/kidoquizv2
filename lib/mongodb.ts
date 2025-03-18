@@ -30,34 +30,38 @@ declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined; // eslint-disable-line no-var
 }
 
-// Create MongoDB client with connection handling
-let client: MongoClient;
-try {
-    client = new MongoClient(uri, options);
-    console.log("🔄 Attempting to connect to MongoDB...");
-    
-    // Test the connection before proceeding
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log("✅ MongoDB connection test successful!");
-} catch (error) {
-    console.error("🚨 Initial MongoDB connection test failed:", error);
-    throw error;
+async function connectToMongoDB(): Promise<MongoClient> {
+    try {
+        const client = new MongoClient(uri, options);
+        console.log("🔄 Attempting to connect to MongoDB...");
+        
+        // Connect and test the connection
+        await client.connect();
+        await client.db("admin").command({ ping: 1 });
+        console.log("✅ MongoDB connection test successful!");
+        
+        return client;
+    } catch (error) {
+        console.error("🚨 Initial MongoDB connection test failed:", error);
+        throw error;
+    }
 }
 
-const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? client.connect();
-
+// Initialize client promise
 if (!global._mongoClientPromise) {
     console.log("🔄 Setting up global MongoDB connection...");
-    
-    global._mongoClientPromise = clientPromise.then((client) => {
-        console.log("✅ Successfully connected to MongoDB!");
-        return client;
-    }).catch((error) => {
-        console.error("🚨 MongoDB Connection Failed:", error);
-        throw error;
-    });
+    global._mongoClientPromise = connectToMongoDB()
+        .then((client) => {
+            console.log("✅ Successfully connected to MongoDB!");
+            return client;
+        })
+        .catch((error) => {
+            console.error("🚨 MongoDB Connection Failed:", error);
+            throw error;
+        });
 }
+
+const clientPromise = global._mongoClientPromise;
 
 // Prevent memory leaks by setting global in development mode only
 if (process.env.NODE_ENV !== "production") {
