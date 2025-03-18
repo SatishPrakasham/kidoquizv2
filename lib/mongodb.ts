@@ -14,7 +14,15 @@ const options = {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
+    ssl: true,
+    tls: true,
+    tlsAllowInvalidCertificates: true, // For debugging TLS issues
+    tlsAllowInvalidHostnames: true,    // For debugging TLS issues
+    minPoolSize: 1,
+    maxPoolSize: 10,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 45000
 };
 
 // Define the global type for MongoDB client
@@ -23,10 +31,24 @@ declare global {
 }
 
 // Create MongoDB client with connection handling
-const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? new MongoClient(uri, options).connect();
+let client: MongoClient;
+try {
+    client = new MongoClient(uri, options);
+    console.log("🔄 Attempting to connect to MongoDB...");
+    
+    // Test the connection before proceeding
+    await client.connect();
+    await client.db("admin").command({ ping: 1 });
+    console.log("✅ MongoDB connection test successful!");
+} catch (error) {
+    console.error("🚨 Initial MongoDB connection test failed:", error);
+    throw error;
+}
+
+const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? client.connect();
 
 if (!global._mongoClientPromise) {
-    console.log("🔄 Connecting to MongoDB...");
+    console.log("🔄 Setting up global MongoDB connection...");
     
     global._mongoClientPromise = clientPromise.then((client) => {
         console.log("✅ Successfully connected to MongoDB!");
