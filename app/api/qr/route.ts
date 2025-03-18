@@ -31,7 +31,7 @@ export async function GET() {
     try {
         const client = await clientPromise;
         const db = client.db("QuizApp"); // Change this to your database name
-        const qrCollection = db.collection("qrCodes");
+        const qrCollection = db.collection("QrCodes");
 
         // Fetch the latest unused QR code
         let qrCode = await qrCollection.findOne(
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
         const client = await clientPromise;
         const db = client.db("QuizApp");
-        const qrCollection = db.collection("qrCodes");
+        const qrCollection = db.collection("QrCodes");
 
         // Find the QR code in the database
         const qrCode = await qrCollection.findOne({ id });
