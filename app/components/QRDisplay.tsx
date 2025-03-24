@@ -5,7 +5,7 @@ import Image from "next/image"
 import { RefreshCw } from "lucide-react"
 
 export default function QRDisplay() {
-  const [qrCode, setQrCode] = useState<string | null>(null)
+  const [qrCode, setQrCode] = useState<{ id: string; qrImageData: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -13,13 +13,12 @@ export default function QRDisplay() {
   const fetchQRCode = async () => {
     try {
       setLoading(true)
-      setRefreshing(true)
       setError(null)
       const response = await fetch("/api/qr")
       const data = await response.json()
 
       if (data.success) {
-        setQrCode(data.data.qrImageData)
+        setQrCode({ id: data.data.id, qrImageData: data.data.qrImageData })
       } else {
         setError(data.error || "Failed to generate QR code")
       }
@@ -33,10 +32,31 @@ export default function QRDisplay() {
   }
 
   useEffect(() => {
+    let checkInterval: NodeJS.Timeout
+
+    const pollForScan = async () => {
+      try {
+        const res = await fetch("/api/qr")
+        const data = await res.json()
+
+        if (data.success) {
+          const newId = data.data.id
+          const newImage = data.data.qrImageData
+
+          if (!qrCode || qrCode.id !== newId) {
+            setQrCode({ id: newId, qrImageData: newImage })
+            setRefreshing(true)
+          }
+        }
+      } catch (err) {
+        console.error("Polling error:", err)
+      }
+    }
+
     fetchQRCode()
-    const interval = setInterval(fetchQRCode, 30000)
-    return () => clearInterval(interval)
-  }, []) // Removed fetchQRCode from dependencies
+    checkInterval = setInterval(pollForScan, 2000)
+    return () => clearInterval(checkInterval)
+  }, [])
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-md">
@@ -71,7 +91,7 @@ export default function QRDisplay() {
                 </div>
               )}
               <Image
-                src={qrCode || "/placeholder.svg"}
+                src={qrCode.qrImageData || "/placeholder.svg"}
                 alt="QR Code"
                 width={256}
                 height={256}
@@ -79,7 +99,6 @@ export default function QRDisplay() {
               />
             </div>
 
-            {/* Decorative elements */}
             <div className="absolute -top-3 -right-3 h-8 w-8 bg-purple-500 rounded-full shadow-md"></div>
             <div className="absolute -bottom-3 -left-3 h-8 w-8 bg-indigo-500 rounded-full shadow-md"></div>
           </div>
@@ -88,33 +107,8 @@ export default function QRDisplay() {
 
       <div className="mt-6 text-center">
         <p className="text-sm font-semibold text-indigo-700 mb-2">Scan this QR code to start the quiz</p>
-        <div className="flex items-center justify-center space-x-1 text-xs text-indigo-500">
-          <RefreshCw className="h-3 w-3" />
-          <p>Auto-refreshing every 30 seconds</p>
-        </div>
-        <p className="text-xs text-indigo-400 mt-1">This QR code will be valid until scanned</p>
-      </div>
-
-      <div className="mt-6">
-        <button
-          onClick={fetchQRCode}
-          disabled={loading}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-        >
-          {loading ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh QR Code
-            </>
-          )}
-        </button>
+        <p className="text-xs text-indigo-400 mt-1">This QR code will stay until scanned</p>
       </div>
     </div>
   )
 }
-
