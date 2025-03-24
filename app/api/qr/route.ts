@@ -6,6 +6,7 @@ import { collection, addDoc } from 'firebase/firestore';
 
 const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
+// In-memory QR code
 let currentQRCode: {
   id: string;
   timestamp: number;
@@ -13,6 +14,7 @@ let currentQRCode: {
   qrImageData: string;
 } | null = null;
 
+// Generate a new QR Code
 async function generateNewQRCode() {
   const qrData = {
     id: uuidv4(),
@@ -32,6 +34,7 @@ async function generateNewQRCode() {
   return currentQRCode;
 }
 
+// GET endpoint: Returns the latest valid QR code
 export async function GET() {
   try {
     if (!currentQRCode || currentQRCode.isUsed) {
@@ -47,6 +50,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    console.error('🚨 GET error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch QR code' },
       { status: 500 }
@@ -54,6 +58,7 @@ export async function GET() {
   }
 }
 
+// POST endpoint: Marks QR code as used and logs it to Firestore
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -82,13 +87,14 @@ export async function POST(request: Request) {
 
     currentQRCode.isUsed = true;
 
-    // ✅ Save scanned QR code to Firebase
+    // Save to Firebase
     await addDoc(collection(db, 'ScannedQRCodes'), {
       id: currentQRCode.id,
       timestamp: currentQRCode.timestamp,
       scannedAt: Date.now(),
     });
 
+    // Generate new one for next request
     const newQRCode = await generateNewQRCode();
 
     return NextResponse.json({
@@ -101,7 +107,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('🚨 POST error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to process QR code' },
       { status: 500 }
