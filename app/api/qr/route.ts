@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
-// In-memory QR code store
 let currentQRCode: {
   id: string;
   timestamp: number;
@@ -12,7 +13,6 @@ let currentQRCode: {
   qrImageData: string;
 } | null = null;
 
-// Function to generate a new QR code
 async function generateNewQRCode() {
   const qrData = {
     id: uuidv4(),
@@ -26,18 +26,15 @@ async function generateNewQRCode() {
   });
 
   const qrUrl = `${PRODUCTION_URL}/scan/validate?${urlParams.toString()}`;
-  console.log('Generated QR URL:', qrUrl);
-
   const qrImageData = await QRCode.toDataURL(qrUrl);
+
   currentQRCode = { ...qrData, qrImageData };
   return currentQRCode;
 }
 
-// GET endpoint
 export async function GET() {
   try {
     if (!currentQRCode || currentQRCode.isUsed) {
-      console.log('⚠️ No valid QR found. Generating a new one...');
       currentQRCode = await generateNewQRCode();
     }
 
@@ -50,7 +47,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('🚨 Error fetching QR code:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch QR code' },
       { status: 500 }
@@ -58,7 +54,6 @@ export async function GET() {
   }
 }
 
-// POST endpoint
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -80,18 +75,25 @@ export async function POST(request: Request) {
 
     if (currentQRCode.isUsed) {
       return NextResponse.json(
-        { success: false, error: 'This QR code has expired. Please request a new one.' },
+        { success: false, error: 'QR code already used' },
         { status: 400 }
       );
     }
 
     currentQRCode.isUsed = true;
 
+    // ✅ Save scanned QR code to Firebase
+    await addDoc(collection(db, 'ScannedQRCodes'), {
+      id: currentQRCode.id,
+      timestamp: currentQRCode.timestamp,
+      scannedAt: Date.now(),
+    });
+
     const newQRCode = await generateNewQRCode();
 
     return NextResponse.json({
       success: true,
-      message: 'QR code validated successfully',
+      message: 'QR code validated and saved to Firestore',
       newQRCode: {
         id: newQRCode.id,
         qrImageData: newQRCode.qrImageData,
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('🚨 Error validating QR code:', error);
+    console.error('Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to process QR code' },
       { status: 500 }
