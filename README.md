@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📘 KidoQuiz
 
-## Getting Started
+KidoQuiz is a fun, interactive quiz platform that uses **QR codes** to allow participants to join and play in real-time. It is built using **Next.js 15**, **Firebase** for database storage, and **TypeScript** for type safety.
 
-First, run the development server:
+---
 
+## 🚀 Features
+
+- 🔄 **Live QR Code Generation** – Users can scan a dynamic QR code to enter the quiz.
+- ✅ **One-time QR Usage** – Each QR code can only be used once, for security.
+- 🔁 **Automatic Refresh** – After scanning, a new QR code is generated and displayed.
+- ☁️ **Deployed on Railway** – Production-ready and accessible online.
+- 🔥 **Firebase Integration** – All scanned QR codes are securely stored in Firestore.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org) 15 (App Router)
+- **Language**: TypeScript
+- **Database**: Firebase Firestore
+- **Styling**: Tailwind CSS
+- **QR Generation**: `qrcode` package
+- **UUIDs**: `uuid` package
+
+---
+
+## 🧑‍💻 Getting Started
+
+### 1. Clone the Repo
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/kidoquiz.git
+cd kidoquiz
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Set Up Environment Variables
+Create a `.env.local` file in the root directory and add:
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-msg-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+> ⚠️ Get this config from your Firebase Console > Project Settings.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Visit `http://localhost:3000` in your browser.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔒 QR Code Logic
+- QR code is stored in-memory and displayed on screen
+- On scan, the code is marked `isUsed: true`
+- A new QR code is generated automatically
+- The scanned QR's ID and timestamp are saved to Firebase
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Deployment
+Project is deployed using [Railway](https://railway.app/).
+To deploy:
+```bash
+npm run build
+npm start
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📂 Folder Structure
+```
+/app
+  /components - All UI components (e.g. QRDisplay)
+  /api/qr - QR code generation and validation logic
+/lib
+  firebase.ts - Firebase config and setup
+/public
+  placeholder.svg - Fallback QR image
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ✅ To-Do / Future Improvements
+- 🎯 Add leaderboard and user tracking
+- 🧑‍🏫 Admin panel for quiz creation and monitoring
+- ⏱️ Expiry-based QR system (time-based logic)
+
+---
+
+## 🧠 Author
+**Satish** – Built during internship with a focus on automation, Firebase, and modern Next.js app features.
+
+
