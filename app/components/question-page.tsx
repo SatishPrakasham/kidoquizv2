@@ -1,6 +1,6 @@
 "use client"
-import { Button } from "@/components/ui/button"
-import type { Question } from "@/types/quiz"
+import { Button } from "./ui/button"
+import type { Question } from "../types/quiz"
 import { ChevronRightIcon } from "lucide-react"
 
 interface QuestionPageProps {
@@ -30,7 +30,7 @@ export default function QuestionPage({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
       {/* Gradient header with progress */}
       <div className="h-3 bg-gradient-to-r from-blue-500 to-purple-500 relative">
         <div
@@ -42,7 +42,7 @@ export default function QuestionPage({
       <div className="p-6">
         {/* Question header */}
         <div className="flex justify-between items-center mb-4">
-          <div className="text-sm font-medium text-gray-600">
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-300">
             Question {currentQuestionIndex + 1} of {totalQuestions}
           </div>
           <div
@@ -55,26 +55,30 @@ export default function QuestionPage({
         </div>
 
         {/* Question text */}
-        <h2 className="text-xl font-semibold mb-6">{question.question}</h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-white">{question.question}</h2>
 
         {/* Answer options */}
         <div className="space-y-3 mb-6">
-          {question.options.map((option, index) => (
+          {question.options.map((option: string, index: number) => (
             <div
               key={index}
               onClick={() => onAnswerSelect(option)}
               className={`flex items-center rounded-lg border p-4 cursor-pointer transition-colors duration-300 ${
-                selectedAnswer === option ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                selectedAnswer === option 
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30" 
+                  : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                  selectedAnswer === option ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
+                  selectedAnswer === option 
+                    ? "bg-blue-500 text-white" 
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                 }`}
               >
                 {String.fromCharCode(65 + index)}
               </div>
-              <span className="text-lg">{option}</span>
+              <span className="text-lg text-gray-700 dark:text-gray-200">{option}</span>
             </div>
           ))}
         </div>
@@ -85,7 +89,7 @@ export default function QuestionPage({
           disabled={selectedAnswer === null}
           className={`w-full py-5 text-lg rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ${
             selectedAnswer === null
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
               : "bg-purple-500 hover:bg-purple-600 text-white"
           }`}
         >
@@ -96,4 +100,3 @@ export default function QuestionPage({
     </div>
   )
 }
-

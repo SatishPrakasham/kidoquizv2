@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import type { Question } from "@/types/quiz"
+import { Button } from "./ui/button"
+import type { Question } from "../types/quiz"
 import { CheckCircle, XCircle, RefreshCw, Eye, EyeOff } from "lucide-react"
 
 interface ScorePageProps {
@@ -145,4 +145,3 @@ export default function ScorePage({
     </div>
   )
 }
-
