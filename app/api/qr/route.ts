@@ -4,12 +4,8 @@ import QRCode from 'qrcode';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
-// Get the app URL from environment variables
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
-
-if (!APP_URL) {
-  throw new Error('NEXT_PUBLIC_APP_URL environment variable is not set');
-}
+// Always use production URL for QR codes to ensure they work after scanning
+const QR_PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
 // In-memory QR code
 let currentQRCode: {
@@ -26,8 +22,8 @@ async function generateNewQRCode() {
     timestamp: Date.now(),
   };
 
-  // Generate QR code image using environment URL
-  const qrUrl = new URL('/scan/validate', APP_URL);
+  // Always generate QR code with production URL
+  const qrUrl = new URL('/scan/validate', QR_PRODUCTION_URL);
   qrUrl.searchParams.set('id', qrData.id);
   qrUrl.searchParams.set('timestamp', qrData.timestamp.toString());
   
