@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
 import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
 const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
 
@@ -87,14 +87,13 @@ export async function POST(request: Request) {
 
     currentQRCode.isUsed = true;
 
-    // Save to Firebase
+    // ✅ Save to Firebase Firestore using Timestamp
     await addDoc(collection(db, 'ScannedQRCodes'), {
       id: currentQRCode.id,
-      timestamp: currentQRCode.timestamp,
-      scannedAt: Date.now(),
+      timestamp: Timestamp.fromMillis(currentQRCode.timestamp),
+      scannedAt: Timestamp.now(),
     });
 
-    // Generate new one for next request
     const newQRCode = await generateNewQRCode();
 
     return NextResponse.json({
