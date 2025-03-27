@@ -30,9 +30,9 @@ function ValidatePageContent() {
 
                 if (data.success) {
                     setStatus('success');
-                    setMessage('QR code validated successfully! Redirecting...');
+                    setMessage('QR code validated successfully! Redirecting to quiz...');
                     setTimeout(() => {
-                        window.location.href = '/user';
+                        window.location.href = '/quiz';
                     }, 1500);
                 } else {
                     throw new Error(data.error || 'Failed to validate QR code');
@@ -54,36 +54,40 @@ function ValidatePageContent() {
     }, [searchParams]);
 
     return (
-        <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">QR Code Validation</h1>
-                    <div className={`p-4 rounded-lg ${
-                        status === 'validating' ? 'bg-blue-100 text-blue-700' :
-                        status === 'success' ? 'bg-green-100 text-green-700' :
-                        'bg-red-100 text-red-700'
-                    }`}>
-                        <p>{message}</p>
-                    </div>
-                    {status === 'error' && (
-                        <button
-                            onClick={() => window.location.href = '/scan'}
-                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        >
-                            Try Again
-                        </button>
+                    {status === 'validating' && (
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
                     )}
+                    {status === 'success' && (
+                        <div className="text-green-500 text-6xl mb-4">✓</div>
+                    )}
+                    {status === 'error' && (
+                        <div className="text-red-500 text-6xl mb-4">✗</div>
+                    )}
+                    <h2 className={`text-2xl font-semibold mb-4 ${
+                        status === 'success' ? 'text-green-500' :
+                        status === 'error' ? 'text-red-500' :
+                        'text-gray-900'
+                    }`}>
+                        {status === 'validating' ? 'Validating' :
+                         status === 'success' ? 'Success!' :
+                         'Error'}
+                    </h2>
+                    <p className="text-gray-600">{message}</p>
                 </div>
             </div>
         </div>
     );
 }
 
-// ✅ Wrap inside `<Suspense>` to fix the error
-export default function ValidatePage() {
+function ValidatePage() {
     return (
-        <Suspense fallback={<div>Loading QR Validation...</div>}>
+        <Suspense fallback={<div>Loading...</div>}>
             <ValidatePageContent />
         </Suspense>
     );
 }
+
+export default ValidatePage;
