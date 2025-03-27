@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import StartPage from "@/app/components/start-page"
 import QuestionPage from "@/app/components/question-page"
 import ScorePage from "@/app/components/score-page"
@@ -14,6 +14,15 @@ export default function QuizApp() {
   const [timeRemaining, setTimeRemaining] = useState(30)
   const [totalTime, setTotalTime] = useState(0)
   const [timerActive, setTimerActive] = useState(false)
+
+  const handleNextQuestion = useCallback(() => {
+    if (currentQuestion < quizQuestions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1)
+    } else {
+      setQuizState("score")
+      setTimerActive(false)
+    }
+  }, [currentQuestion])
 
   // Reset timer when moving to a new question
   useEffect(() => {
@@ -39,7 +48,7 @@ export default function QuizApp() {
     }
 
     return () => clearInterval(interval)
-  }, [timerActive, timeRemaining])
+  }, [timerActive, timeRemaining, quizState, handleNextQuestion])
 
   const startQuiz = () => {
     setQuizState("quiz")
@@ -58,15 +67,6 @@ export default function QuizApp() {
     // Check if answer is correct
     if (answer === quizQuestions[currentQuestion].correctAnswer) {
       setScore((prev) => prev + 1)
-    }
-  }
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < quizQuestions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1)
-    } else {
-      setQuizState("score")
-      setTimerActive(false)
     }
   }
 
@@ -105,4 +105,3 @@ export default function QuizApp() {
     </main>
   )
 }
-
