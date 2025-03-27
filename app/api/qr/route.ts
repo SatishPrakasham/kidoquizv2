@@ -4,8 +4,12 @@ import QRCode from 'qrcode';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
-// Use environment variable for URL with fallback
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+// Get the app URL from environment variables
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+
+if (!APP_URL) {
+  throw new Error('NEXT_PUBLIC_APP_URL environment variable is not set');
+}
 
 // In-memory QR code
 let currentQRCode: {
@@ -22,8 +26,8 @@ async function generateNewQRCode() {
     timestamp: Date.now(),
   };
 
-  // Generate QR code image
-  const qrUrl = new URL('/scan/validate', BASE_URL);
+  // Generate QR code image using environment URL
+  const qrUrl = new URL('/scan/validate', APP_URL);
   qrUrl.searchParams.set('id', qrData.id);
   qrUrl.searchParams.set('timestamp', qrData.timestamp.toString());
   
