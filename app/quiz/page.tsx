@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import StartPage from "@/app/components/start-page"
-import QuestionPage from "@/app/components/question-page"
-import ScorePage from "@/app/components/score-page"
-import { quizQuestions } from "@/app/data/quiz-questions"
+import StartPage from "../components/start-page"
+import QuestionPage from "../components/question-page"
+import ScorePage from "../components/score-page"
+import { quizQuestions } from "../data/quiz-questions"
 
 export default function QuizApp() {
   const [quizState, setQuizState] = useState<"start" | "quiz" | "score">("start")
