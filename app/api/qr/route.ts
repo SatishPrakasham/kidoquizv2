@@ -4,7 +4,8 @@ import QRCode from 'qrcode';
 import { db } from '../../../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
-const PRODUCTION_URL = 'https://kidoquizv2-production.up.railway.app';
+// Use environment variable for URL with fallback
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 // In-memory QR code
 let currentQRCode: {
@@ -22,8 +23,11 @@ async function generateNewQRCode() {
   };
 
   // Generate QR code image
-  const qrUrl = `${PRODUCTION_URL}/scan/validate?id=${qrData.id}&timestamp=${qrData.timestamp}`;
-  const qrImageData = await QRCode.toDataURL(qrUrl);
+  const qrUrl = new URL('/scan/validate', BASE_URL);
+  qrUrl.searchParams.set('id', qrData.id);
+  qrUrl.searchParams.set('timestamp', qrData.timestamp.toString());
+  
+  const qrImageData = await QRCode.toDataURL(qrUrl.toString());
 
   currentQRCode = {
     ...qrData,
@@ -48,10 +52,17 @@ export async function GET() {
       currentQRCode = await generateNewQRCode();
     }
 
-    return NextResponse.json(currentQRCode);
+    return NextResponse.json({
+      success: true,
+      data: currentQRCode,
+    });
+
   } catch (error) {
     console.error('Error generating QR code:', error);
-    return NextResponse.json({ error: 'Failed to generate QR code' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to generate QR code'
+    }, { status: 500 });
   }
 }
 
@@ -62,35 +73,35 @@ export async function POST(request: Request) {
 
     // Validate request data
     if (!id || !timestamp) {
-      return NextResponse.json(
-        { error: 'Invalid request data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        success: false,
+        error: 'Invalid request data'
+      }, { status: 400 });
     }
 
     // Check if QR code exists and matches
     if (!currentQRCode || currentQRCode.id !== id || currentQRCode.timestamp !== timestamp) {
-      return NextResponse.json(
-        { error: 'Invalid QR code' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        success: false,
+        error: 'Invalid QR code'
+      }, { status: 400 });
     }
 
     // Check if QR code is already used
     if (currentQRCode.isUsed) {
-      return NextResponse.json(
-        { error: 'QR code already used' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        success: false,
+        error: 'QR code already used'
+      }, { status: 400 });
     }
 
     // Check if QR code is expired (5 minutes)
     const isExpired = Date.now() - timestamp > 5 * 60 * 1000;
     if (isExpired) {
-      return NextResponse.json(
-        { error: 'QR code expired' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        success: false,
+        error: 'QR code expired'
+      }, { status: 400 });
     }
 
     // Mark QR code as used
@@ -104,12 +115,22 @@ export async function POST(request: Request) {
       usedAt: Timestamp.now(),
     });
 
-    return NextResponse.json({ success: true });
+    // Generate new QR code for next use
+    const newQRCode = await generateNewQRCode();
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        message: 'QR code validated successfully',
+        newQRCode,
+      }
+    });
+
   } catch (error) {
     console.error('Error validating QR code:', error);
-    return NextResponse.json(
-      { error: 'Failed to validate QR code' },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to validate QR code'
+    }, { status: 500 });
   }
 }

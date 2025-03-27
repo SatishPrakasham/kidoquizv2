@@ -1,5 +1,5 @@
-import type { Question } from "@/types/quiz"
-import { generateQuizQuestions } from "@/utils/generate-quiz"
+import type { Question } from "../types/quiz"
+import { generateQuizQuestions } from "../utils/generate-quiz"
 
 // Default questions as fallback in case AI generation fails
 const defaultQuestions: Question[] = [
