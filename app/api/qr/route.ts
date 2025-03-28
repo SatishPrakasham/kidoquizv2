@@ -55,7 +55,8 @@ export async function GET() {
 // POST handler - validates a QR code
 export async function POST(request: Request) {
   try {
-    const { id, timestamp } = await request.json();
+    // Destructure only the id from the request body
+    const { id } = await request.json();
 
     // Validate request data
     if (!id) {
