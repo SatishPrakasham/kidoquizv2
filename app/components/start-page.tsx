@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "./ui/button"
 import { PlayIcon } from "lucide-react"
 
 interface StartPageProps {
@@ -37,4 +37,3 @@ export default function StartPage({ onStart }: StartPageProps) {
     </div>
   )
 }
-

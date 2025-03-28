@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { db } from '../../../lib/firebase';
+import { db } from 'lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
 // Always use production URL for QR codes to ensure they work after scanning
@@ -22,15 +22,12 @@ async function generateNewQRCode() {
     timestamp: Date.now(),
   };
 
-  // Always generate QR code with production URL
-  const qrUrl = new URL('/scan/validate', QR_PRODUCTION_URL);
-  qrUrl.searchParams.set('id', qrData.id);
-  qrUrl.searchParams.set('timestamp', qrData.timestamp.toString());
-  
-  const qrImageData = await QRCode.toDataURL(qrUrl.toString());
+  // Generate QR code with the quiz URL and the unique ID
+  const qrImageData = await QRCode.toDataURL(`${QR_PRODUCTION_URL}/scan/validate?id=${qrData.id}`);
 
   currentQRCode = {
-    ...qrData,
+    id: qrData.id,
+    timestamp: qrData.timestamp,
     isUsed: false,
     qrImageData,
   };
@@ -38,99 +35,79 @@ async function generateNewQRCode() {
   return currentQRCode;
 }
 
-// GET endpoint: Returns the latest valid QR code
+// GET handler - returns the current QR code or generates a new one
 export async function GET() {
   try {
-    // If no QR code exists or current one is used, generate new one
-    if (!currentQRCode || currentQRCode.isUsed) {
-      currentQRCode = await generateNewQRCode();
+    // If no QR code exists or it's older than 5 minutes, generate a new one
+    if (!currentQRCode || Date.now() - currentQRCode.timestamp > 5 * 60 * 1000) {
+      const newQRCode = await generateNewQRCode();
+      return NextResponse.json(newQRCode);
     }
 
-    // Check if QR code is expired (5 minutes)
-    const isExpired = Date.now() - currentQRCode.timestamp > 5 * 60 * 1000;
-    if (isExpired) {
-      currentQRCode = await generateNewQRCode();
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: currentQRCode,
-    });
-
+    // Return the existing QR code
+    return NextResponse.json(currentQRCode);
   } catch (error) {
     console.error('Error generating QR code:', error);
-    return NextResponse.json({ 
-      success: false,
-      error: 'Failed to generate QR code'
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to generate QR code' }, { status: 500 });
   }
 }
 
-// POST endpoint: Marks QR code as used and logs it to Firestore
+// POST handler - validates a QR code
 export async function POST(request: Request) {
   try {
-    const { id, timestamp } = await request.json();
+    const { id } = await request.json();
 
-    // Validate request data
-    if (!id || !timestamp) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'Invalid request data'
-      }, { status: 400 });
+    // Check if the QR code exists and is valid
+    if (!currentQRCode) {
+      return NextResponse.json(
+        { valid: false, message: 'No active QR code found' },
+        { status: 400 }
+      );
     }
 
-    // Check if QR code exists and matches
-    if (!currentQRCode || currentQRCode.id !== id || currentQRCode.timestamp !== timestamp) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'Invalid QR code'
-      }, { status: 400 });
+    // Check if the IDs match
+    if (currentQRCode.id !== id) {
+      return NextResponse.json(
+        { valid: false, message: 'Invalid QR code' },
+        { status: 400 }
+      );
     }
 
-    // Check if QR code is already used
+    // Check if the QR code has already been used
     if (currentQRCode.isUsed) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'QR code already used'
-      }, { status: 400 });
+      return NextResponse.json(
+        { valid: false, message: 'QR code has already been used' },
+        { status: 400 }
+      );
     }
 
-    // Check if QR code is expired (5 minutes)
-    const isExpired = Date.now() - timestamp > 5 * 60 * 1000;
-    if (isExpired) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'QR code expired'
-      }, { status: 400 });
+    // Check if the QR code has expired (older than 5 minutes)
+    const timestamp = currentQRCode.timestamp;
+    if (Date.now() - timestamp > 5 * 60 * 1000) {
+      return NextResponse.json(
+        { valid: false, message: 'QR code has expired' },
+        { status: 400 }
+      );
     }
 
-    // Mark QR code as used
+    // Mark the QR code as used
     currentQRCode.isUsed = true;
 
     // Log to Firestore
-    const qrLogsCollection = collection(db, 'qr_logs');
+    const qrLogsCollection = collection(db, 'ScannedQRCodes');
     await addDoc(qrLogsCollection, {
       qrId: id,
       timestamp: Timestamp.fromMillis(timestamp),
-      usedAt: Timestamp.now(),
+      scannedAt: Timestamp.now(),
     });
 
-    // Generate new QR code for next use
-    const newQRCode = await generateNewQRCode();
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: 'QR code validated successfully',
-        newQRCode,
-      }
-    });
-
+    // Return success
+    return NextResponse.json({ valid: true, message: 'QR code validated successfully' });
   } catch (error) {
     console.error('Error validating QR code:', error);
-    return NextResponse.json({ 
-      success: false,
-      error: 'Failed to validate QR code'
-    }, { status: 500 });
+    return NextResponse.json(
+      { valid: false, message: 'Error validating QR code' },
+      { status: 500 }
+    );
   }
 }
