@@ -19,11 +19,12 @@ export default function QRDisplay() {
       const response = await fetch("/api/qr");
       const data = await response.json();
 
-      if (data.success) {
-        setQrCode(data.data.qrImageData);
-        setCurrentId(data.data.id);
-      } else {
+      if (data.error) {
         setError(data.error || "Failed to generate QR code");
+      } else {
+        // The API now returns the QR code data directly
+        setQrCode(data.qrImageData);
+        setCurrentId(data.id);
       }
     } catch (err) {
       console.error("QR Code error:", err);
@@ -40,12 +41,17 @@ export default function QRDisplay() {
 
   useEffect(() => {
     const checkInterval = setInterval(async () => {
-      const res = await fetch("/api/qr");
-      const data = await res.json();
+      try {
+        const res = await fetch("/api/qr");
+        const data = await res.json();
 
-      if (data?.data?.id !== currentId) {
-        setQrCode(data.data.qrImageData);
-        setCurrentId(data.data.id);
+        // Check if the QR code has changed
+        if (data?.id && data.id !== currentId) {
+          setQrCode(data.qrImageData);
+          setCurrentId(data.id);
+        }
+      } catch (error) {
+        console.error("Error checking for QR updates:", error);
       }
     }, 3000);
 
