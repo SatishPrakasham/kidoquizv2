@@ -3,8 +3,7 @@
 import { useState } from "react"
 import { Button } from "./ui/button"
 import type { Question } from "../types/quiz"
-import { CheckCircle, XCircle, RefreshCw, Eye, EyeOff, BarChart as BarChartIcon } from "lucide-react"
-import { ChartContainer } from "./ui/chart"
+import { CheckCircle, XCircle, RefreshCw, Eye, EyeOff } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 interface ScorePageProps {
