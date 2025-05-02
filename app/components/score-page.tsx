@@ -147,9 +147,12 @@ export default function ScorePage({
           
           <div className="mt-4 grid grid-cols-3 gap-2">
             {categoryData.map((item) => (
-              <div key={item.category} className="text-center p-2 border rounded-md">
-                <div className="font-medium">{item.category}</div>
-                <div className="text-sm text-gray-600">{item.correct}/{item.total}</div>
+              <div key={item.category} className="text-center p-3 border rounded-md bg-white shadow-sm">
+                <div className="font-medium text-blue-600 mb-1">{item.category}</div>
+                <div className="text-lg font-bold">{item.correct}/{item.total}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {item.percentage}% correct
+                </div>
               </div>
             ))}
           </div>
