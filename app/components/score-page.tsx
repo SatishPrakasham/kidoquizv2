@@ -3,7 +3,9 @@
 import { useState } from "react"
 import { Button } from "./ui/button"
 import type { Question } from "../types/quiz"
-import { CheckCircle, XCircle, RefreshCw, Eye, EyeOff } from "lucide-react"
+import { CheckCircle, XCircle, RefreshCw, Eye, EyeOff, BarChart as BarChartIcon } from "lucide-react"
+import { ChartContainer } from "./ui/chart"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 interface ScorePageProps {
   score: number
@@ -23,6 +25,7 @@ export default function ScorePage({
   onRetry,
 }: ScorePageProps) {
   const [showReview, setShowReview] = useState(false)
+  const [showCategoryChart, setShowCategoryChart] = useState(true)
 
   // Format total time
   const formatTime = (seconds: number) => {
@@ -33,6 +36,36 @@ export default function ScorePage({
 
   // Calculate percentage score
   const percentage = Math.round((score / totalQuestions) * 100)
+  
+  // Calculate scores by category
+  const categoryScores = questions.reduce((acc, question, index) => {
+    const category = question.category;
+    
+    if (!acc[category]) {
+      acc[category] = {
+        category,
+        correct: 0,
+        total: 0,
+        percentage: 0
+      };
+    }
+    
+    acc[category].total += 1;
+    
+    if (selectedAnswers[index] === question.correctAnswer) {
+      acc[category].correct += 1;
+    }
+    
+    return acc;
+  }, {} as Record<string, { category: string; correct: number; total: number; percentage: number }>);
+  
+  // Convert to array and calculate percentages
+  const categoryData = Object.values(categoryScores).map(item => {
+    return {
+      ...item,
+      percentage: Math.round((item.correct / item.total) * 100)
+    };
+  });
 
   // Get message based on score
   const getMessage = () => {
@@ -73,6 +106,53 @@ export default function ScorePage({
           <div className="flex justify-between items-center text-sm text-gray-600">
             <div>Percentage: {percentage}%</div>
             <div>Time: {formatTime(totalTime)}</div>
+          </div>
+        </div>
+        
+        {/* Category Scores Chart */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-lg font-medium text-gray-700">Category Scores</div>
+            <Button
+              onClick={() => setShowCategoryChart(!showCategoryChart)}
+              variant="outline"
+              className="text-xs px-2 py-1 h-auto border-gray-300 text-gray-700"
+            >
+              {showCategoryChart ? "Hide Chart" : "Show Chart"}
+            </Button>
+          </div>
+          
+          {showCategoryChart && (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryData}
+                  margin={{ top: 5, right: 10, left: 10, bottom: 25 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis label={{ value: 'Score (%)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip formatter={(value: number) => [`${value}%`, 'Score']} />
+                  <Legend />
+                  <Bar 
+                    dataKey="percentage" 
+                    name="Score" 
+                    fill="#8884d8" 
+                    radius={[4, 4, 0, 0]}
+                    label={{ position: 'top', formatter: (value: number) => `${value}%` }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {categoryData.map((item) => (
+              <div key={item.category} className="text-center p-2 border rounded-md">
+                <div className="font-medium">{item.category}</div>
+                <div className="text-sm text-gray-600">{item.correct}/{item.total}</div>
+              </div>
+            ))}
           </div>
         </div>
 
