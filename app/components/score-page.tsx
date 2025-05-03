@@ -12,7 +12,7 @@ interface ScorePageProps {
   totalTime: number
   selectedAnswers: (string | null)[]
   questions: Question[]
-
+  onRetry?: () => void
 }
 
 export default function ScorePage({
@@ -21,7 +21,7 @@ export default function ScorePage({
   totalTime,
   selectedAnswers,
   questions,
-
+  onRetry,
 }: ScorePageProps) {
   const [showReview, setShowReview] = useState(false)
   const [showCategoryChart, setShowCategoryChart] = useState(true)
