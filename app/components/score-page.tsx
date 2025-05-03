@@ -12,7 +12,7 @@ interface ScorePageProps {
   totalTime: number
   selectedAnswers: (string | null)[]
   questions: Question[]
-  onRetry: () => void
+
 }
 
 export default function ScorePage({
@@ -21,7 +21,7 @@ export default function ScorePage({
   totalTime,
   selectedAnswers,
   questions,
-  onRetry,
+
 }: ScorePageProps) {
   const [showReview, setShowReview] = useState(false)
   const [showCategoryChart, setShowCategoryChart] = useState(true)
@@ -215,14 +215,7 @@ export default function ScorePage({
           </div>
         )}
 
-        {/* Retry button */}
-        <Button
-          onClick={onRetry}
-          className="w-full py-5 text-lg bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 transition-all duration-300"
-        >
-          <RefreshCw className="w-5 h-5" />
-          Retry Quiz
-        </Button>
+
       </div>
     </div>
   )
