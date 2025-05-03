@@ -21,7 +21,6 @@ export default function ScorePage({
   totalTime,
   selectedAnswers,
   questions,
-  onRetry,
 }: ScorePageProps) {
   const [showReview, setShowReview] = useState(false)
   const [showCategoryChart, setShowCategoryChart] = useState(true)
